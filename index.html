@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Soochak | AI-Enabled Mine Subsidence Monitoring & Early Warning System</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <span class="pulse-dot"></span>
+          <span>SIH 2026 • PS 26025</span>
+        </div>
+        <div class="title-group">
+          <h1>PROJECT SOOCHAK <span class="sub-tag">Mine Assessment & Terrain Response</span></h1>
+          <p class="subtitle">AI-Enabled Low-Cost Real-Time Mine Subsidence Monitoring & Early Warning System • Team MATR</p>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- Live Scenario Switcher for Judges -->
+        <div class="scenario-panel">
+          <div class="scenario-label">
+            <svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>LIVE SCENARIO DEMO:</span>
+          </div>
+          <div class="scenario-buttons">
+            <button class="scenario-btn active" data-scenario="normal" title="Normal steady mining shift with micro-vibrations">
+              <span class="badge-status green"></span> Normal Shift
+            </button>
+            <button class="scenario-btn" data-scenario="blasting" title="Heavy machinery / blast vibration: Demonstrates False Alarm Rejection">
+              <span class="badge-status yellow"></span> Blasting (False Alarm Rejection)
+            </button>
+            <button class="scenario-btn" data-scenario="strata_creep" title="Developing roof strata bed separation and micro-strain">
+              <span class="badge-status orange"></span> Strata Bed Separation
+            </button>
+            <button class="scenario-btn danger" data-scenario="critical_subsidence" title="Rapid coordinated strata displacement: Full Evacuation Trigger">
+              <span class="badge-status red"></span> Critical Subsidence
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="threat-indicator" id="threatIndicator">
+          <div class="threat-label">SYSTEM THREAT LEVEL</div>
+          <div class="threat-status safe" id="threatStatus">SAFE / NOMINAL</div>
+        </div>
+        <div class="quick-controls">
+          <button class="icon-btn" id="audioToggleBtn" title="Toggle Siren & Alert Audio">
+            <svg id="audioIconOn" class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <svg id="audioIconOff" class="icon hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          </button>
+          <button class="btn btn-outline" id="exportReportBtn">
+            <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Audit Report
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- METRICS RIBBON -->
+    <section class="metrics-ribbon">
+      <div class="metric-card">
+        <div class="metric-icon mesh-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        </div>
+        <div class="metric-data">
+          <span class="metric-val" id="metricActiveNodes">8 / 8</span>
+          <span class="metric-title">ESP32 MESH NODES ONLINE</span>
+        </div>
+        <span class="metric-sub text-success">ESP-NOW / LoRa 868MHz</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon laser-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <div class="metric-data">
+          <span class="metric-val" id="metricLaserDev">0.14 mm</span>
+          <span class="metric-title">OPTICAL LASER REFERENCE</span>
+        </div>
+        <span class="metric-sub" id="metricLaserSub">500m Baseline • ±0.05mm Acc</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon ai-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="9" r="2"/><path d="M9 15h6"/></svg>
+        </div>
+        <div class="metric-data">
+          <span class="metric-val" id="metricAnomalyScore">0.12</span>
+          <span class="metric-title">ISOLATION FOREST SCORE</span>
+        </div>
+        <span class="metric-sub" id="metricAiSub">Multi-Sensor Feature Vector</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon filter-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="metric-data">
+          <span class="metric-val" id="metricFalseAlarms">0 Filtered</span>
+          <span class="metric-title">FALSE ALARMS REJECTED</span>
+        </div>
+        <span class="metric-sub" id="metricSpatialSub">Spatial Correlation Guard</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon gas-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        </div>
+        <div class="metric-data">
+          <span class="metric-val" id="metricMaxMethane">180 ppm</span>
+          <span class="metric-title">UNDERGROUND CH4 LEVEL</span>
+        </div>
+        <span class="metric-sub text-success">Permissible &lt; 5000 ppm</span>
+      </div>
+    </section>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="dashboard-grid">
+      <!-- LEFT PANEL: MAP & TELEMETRY -->
+      <section class="panel map-telemetry-panel">
+        <div class="panel-header">
+          <div class="panel-tabs">
+            <button class="tab-btn active" id="tabSurfaceMap">
+              <svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              Surface GIS Heatmap (Panel 4-B)
+            </button>
+            <button class="tab-btn" id="tabCrossSection">
+              <svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+              Underground Strata Cross-Section
+            </button>
+          </div>
+
+          <div class="map-actions">
+            <div class="map-legend">
+              <span class="legend-item"><span class="legend-dot dot-green"></span> 0-5mm Safe</span>
+              <span class="legend-item"><span class="legend-dot dot-yellow"></span> 5-12mm Watch</span>
+              <span class="legend-item"><span class="legend-dot dot-orange"></span> 12-20mm Warning</span>
+              <span class="legend-item"><span class="legend-dot dot-red"></span> &gt;20mm Critical</span>
+            </div>
+            <button class="btn btn-sm btn-subtle" id="toggleLaserRayBtn">
+              <svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+              Toggle Laser Beam
+            </button>
+            <button class="btn btn-sm btn-subtle" id="resetMapViewBtn">Reset View</button>
+          </div>
+        </div>
+
+        <!-- CANVAS CONTAINER -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="gisCanvas"></canvas>
+          <div class="canvas-hud" id="canvasHud">
+            <div class="hud-item"><span class="label">COAL MINE:</span> <span class="val">Jharia Seam No. 11</span></div>
+            <div class="hud-item"><span class="label">DEPTH:</span> <span class="val">185m Underground</span></div>
+            <div class="hud-item"><span class="label">EXTRACTION:</span> <span class="val">Longwall Retreat Panel</span></div>
+            <div class="hud-item"><span class="label">COORDINATES:</span> <span class="val" id="hudCoords">23.7540° N, 86.4182° E</span></div>
+          </div>
+
+          <!-- Live Alert Overlay Banner for critical events -->
+          <div class="critical-alert-banner hidden" id="criticalAlertBanner">
+            <div class="banner-content">
+              <span class="alarm-icon">⚠️</span>
+              <div class="alarm-text">
+                <h3>DGMS SUBSIDENCE ALERT: IMMEDIATE ACTION REQUIRED</h3>
+                <p id="criticalAlertText">Coordinated strata shear detected across Nodes S-102, S-103, S-104 with 21.4mm surface sagging. Evacuate Panel 4-B!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MULTI-PARAMETER REAL-TIME CHARTS -->
+        <div class="telemetry-charts-section">
+          <div class="chart-header">
+            <h3>REAL-TIME SENSOR STREAM & HISTORICAL DEFORMATION TRENDS</h3>
+            <div class="chart-legend">
+              <span class="legend-chip c-disp">● Surface Displacement (VL53L1X / Laser mm)</span>
+              <span class="legend-chip c-tilt">● Roof Tilt Angle (MPU6050 °)</span>
+              <span class="legend-chip c-strain">● Hydraulic Support Load (HX711 kPa)</span>
+              <span class="legend-chip c-gas">● Methane Gas (MQ-4 ppm)</span>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="telemetryChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: ML ENGINE, HARDWARE INSPECTOR, ALERT LOG -->
+      <aside class="panel analysis-panel">
+        <!-- 1. ML ANOMALY & FALSE ALARM REJECTION ENGINE -->
+        <div class="sub-panel ml-engine-card">
+          <div class="sub-panel-header">
+            <h3>
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              ML Anomaly & Spatial Correlation Engine
+            </h3>
+            <span class="pill-badge" id="mlStatusBadge">Isolation Forest Active</span>
+          </div>
+
+          <div class="ml-body">
+            <!-- Anomaly Score Bar -->
+            <div class="anomaly-gauge-wrapper">
+              <div class="gauge-label-row">
+                <span>Anomaly Probability Score</span>
+                <span class="gauge-num" id="gaugeNum">0.12 / 1.00</span>
+              </div>
+              <div class="gauge-track">
+                <div class="gauge-fill safe" id="gaugeFill" style="width: 12%;"></div>
+                <div class="gauge-marker safe-mark" style="left: 40%;" title="Advisory Threshold (0.40)"></div>
+                <div class="gauge-marker warn-mark" style="left: 70%;" title="Evacuation Threshold (0.70)"></div>
+              </div>
+              <div class="gauge-ticks">
+                <span>0.00 (Normal)</span>
+                <span>0.40 (Watch)</span>
+                <span>0.70 (Alert)</span>
+                <span>1.00 (Critical)</span>
+              </div>
+            </div>
+
+            <!-- Spatial Correlation & False Alarm Logic Box -->
+            <div class="correlation-box" id="correlationBox">
+              <div class="corr-header">
+                <span class="corr-title">Multi-Node Spatial Verification</span>
+                <span class="corr-tag green" id="corrTag">COORDINATED CHECK PASS</span>
+              </div>
+              <div class="corr-grid">
+                <div class="corr-item">
+                  <span class="ci-label">Neighbor Nodes Support</span>
+                  <span class="ci-val" id="ciNeighbors">Synchronized (0 Active)</span>
+                </div>
+                <div class="corr-item">
+                  <span class="ci-label">Laser Ground Reference</span>
+                  <span class="ci-val" id="ciLaser">Baseline Stable (&lt; 0.5mm)</span>
+                </div>
+                <div class="corr-item">
+                  <span class="ci-label">Temporal Persistence</span>
+                  <span class="ci-val" id="ciPersistence">0 / 4 cycles</span>
+                </div>
+                <div class="corr-item">
+                  <span class="ci-label">Decision Outcome</span>
+                  <span class="ci-val highlight-green" id="ciDecision">Normal Operations</span>
+                </div>
+              </div>
+              <p class="corr-note" id="corrNote">
+                ✓ Cross-validates laser displacement with multiple neighboring sensor nodes before escalating risk. Suppresses machinery vibrations.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. LASER REFERENCE SYSTEM (SLIDES 2 & 3 INNOVATION) -->
+        <div class="sub-panel laser-card">
+          <div class="sub-panel-header">
+            <h3>
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              Optical Laser Displacement Array (Slide 2 & 3)
+            </h3>
+            <span class="laser-indicator-dot"></span>
+          </div>
+          <div class="laser-body">
+            <div class="laser-target-container">
+              <canvas id="laserTargetCanvas" width="130" height="130"></canvas>
+              <div class="laser-readout">
+                <div class="readout-row"><span class="lbl">Baseline:</span> <span class="val">500.0 m</span></div>
+                <div class="readout-row"><span class="lbl">Spot X:</span> <span class="val" id="laserSpotX">+0.04 mm</span></div>
+                <div class="readout-row"><span class="lbl">Spot Y:</span> <span class="val" id="laserSpotY">-0.11 mm</span></div>
+                <div class="readout-row"><span class="lbl">Total Dev:</span> <span class="val text-highlight" id="laserDevTotal">0.12 mm</span></div>
+                <div class="readout-row"><span class="lbl">Optical SNR:</span> <span class="val text-success">38.4 dB</span></div>
+              </div>
+            </div>
+            <p class="laser-desc">
+              Independent high-precision optical reference validating distributed ESP32 mesh nodes to eliminate drift.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3. DISTRIBUTED SENSOR FLEET (8 NODES) -->
+        <div class="sub-panel fleet-card">
+          <div class="sub-panel-header">
+            <h3>
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              Distributed ESP32 Node Mesh
+            </h3>
+            <span class="fleet-count">8 Nodes Active</span>
+          </div>
+          <div class="node-grid" id="nodeGrid">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- 4. LIVE AUDIT LOG & ALERT NOTIFICATIONS -->
+        <div class="sub-panel log-card">
+          <div class="sub-panel-header">
+            <h3>
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              DGMS Safety Alert & Dispatch Feed
+            </h3>
+            <button class="btn-clean" id="clearLogsBtn">Clear</button>
+          </div>
+          <div class="log-stream" id="logStream">
+            <!-- Filled via JS -->
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- NODE INSPECTOR MODAL -->
+    <div class="modal-backdrop hidden" id="nodeModalBackdrop">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h2 id="modalNodeId">Sensor Node S-103</h2>
+            <span class="badge" id="modalNodeZone">Panel 4-B Roof Strata</span>
+          </div>
+          <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- Populated by JS -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="modalSimulateStressBtn">Simulate Local Impact</button>
+          <button class="btn btn-primary" id="modalCloseActionBtn">Close Inspector</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT AUDIT MODAL -->
+    <div class="modal-backdrop hidden" id="reportModalBackdrop">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+          <div>
+            <h2>DGMS MINE SUBSIDENCE SAFETY AUDIT REPORT</h2>
+            <p class="modal-sub">Compliance with Directorate General of Mines Safety (DGMS) Circular No. 04 / 2026</p>
+          </div>
+          <button class="modal-close-btn" id="reportModalCloseBtn">&times;</button>
+        </div>
+        <div class="modal-body" id="reportBody">
+          <!-- Generated by JS -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="downloadCsvBtn">Download CSV Telemetry</button>
+          <button class="btn btn-primary" id="printReportBtn">Print / Save PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER BAR -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span>Team MATR • Smart Multi-Sensor System for Mine Subsidence Monitoring</span>
+        <span class="sep">|</span>
+        <span>Low-Cost Hardware: ESP32 + MPU6050 + VL53L1X + HX711 + BME280 + MQ-4</span>
+      </div>
+      <div class="footer-right">
+        <span>Mesh Gateway IP: 192.168.4.1</span>
+        <span class="sep">|</span>
+        <span class="ping-rate" id="pingRate">Telemetry Rate: 2.0 Hz</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/state.js"></script>
+  <script src="js/audio-alerts.js"></script>
+  <script src="js/mesh-simulator.js"></script>
+  <script src="js/laser-reference.js"></script>
+  <script src="js/ml-engine.js"></script>
+  <script src="js/gis-map.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/scenarios.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
