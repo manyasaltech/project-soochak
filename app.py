@@ -164,7 +164,7 @@ with st.sidebar:
     )
 st.markdown("---")
 
-    selected_scenario_label = st.selectbox(
+        selected_scenario_label = st.selectbox(
         "Operational Regime",
         list(scenario_options.keys()),
         index=0,
