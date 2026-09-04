@@ -1,4 +1,6 @@
-﻿"""
+
+
+"""
 Project Soochak - Mine Assessment & Terrain Response
 Smart India Hackathon 2026 | Problem Statement 26025
 Team MATR
@@ -17,13 +19,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
-# --- Existing Imports ---
-import streamlit as st
-import folium
-import numpy as np
-# ... (keep existing imports)
 
-# --- Add Deep Learning Imports Here ---
+# Deep Learning & Data Engine Imports
 from deep_engine import run_dl_inference
 from graph_topology import build_adjacency_matrix, NODE_COORDS
 from data_engine import (
@@ -126,7 +123,6 @@ st.markdown("""
 if "simulator" not in st.session_state:
     with st.spinner("Initializing Project Soochak AI Engine & Training Isolation Forest..."):
         st.session_state.simulator = MineEnvironmentSimulator()
-        # Initialize with baseline step
         st.session_state.current_data = st.session_state.simulator.step(OperationalScenario.NORMAL)
         st.session_state.auto_refresh = False
 
@@ -152,6 +148,14 @@ with st.sidebar:
         "Sensor Hardware Glitch (Drift Suppression)": OperationalScenario.SENSOR_GLITCH,
     }
 
+    selected_scenario_label = st.selectbox(
+        "Operational Regime",
+        list(scenario_options.keys()),
+        index=0,
+        help="Select geological or operational condition to test AI response."
+    )
+    current_scenario = scenario_options[selected_scenario_label]
+
     st.markdown("---")
     st.subheader("🧠 Select AI Model Engine")
 
@@ -162,15 +166,6 @@ with st.sidebar:
             "+12h Predictive Risk (STGCN-LSTM)"
         ]
     )
-st.markdown("---")
-
-        selected_scenario_label = st.selectbox(
-        "Operational Regime",
-        list(scenario_options.keys()),
-        index=0,
-        help="Select geological or operational condition to test AI response."
-    )
-    current_scenario = scenario_options[selected_scenario_label]
 
     st.markdown("##### Manual Disturbance Injection")
     manual_disp = st.slider("Additional Displacement (mm)", 0.0, 10.0, 0.0, 0.1)
@@ -337,7 +332,6 @@ else:
 # -----------------------------------------------------------------------------
 # 5. FOLIUM REAL-TIME HEATMAP & GIS VISUALIZATION
 # -----------------------------------------------------------------------------
-# --- DEEP LEARNING VS CLASSICAL ML DATA ROUTING ---
 adj_matrix = build_adjacency_matrix(NODE_COORDS)
 
 if view_mode == "+12h Predictive Risk (STGCN-LSTM)":
@@ -345,7 +339,6 @@ if view_mode == "+12h Predictive Risk (STGCN-LSTM)":
     sample_history = np.random.randn(24, 8, 5)
     dl_preds = run_dl_inference(sample_history, adj_matrix)
     
-    # Override node intensity values using PyTorch model outputs
     heatmap_data = [
         [NODE_COORDS[i][0], NODE_COORDS[i][1], float(dl_preds[i])]
         for i in range(len(NODE_COORDS))
@@ -354,28 +347,21 @@ else:
     st.success("🟢 **Classical ML Engine Active:** Real-Time Isolation Forest Anomaly Detection.")
     heatmap_data = [
         [node["lat"], node["lon"], float(node["anomaly_score"])]
-        for node in telemetry_data
+        for node in nodes
     ]
+
 st.subheader("🗺️ Real-Time GIS Heatmap & Distributed Sensor Mesh")
 
-# Center on Jharia Coalfield Panel 4-B
 center_lat = 23.7525
 center_lon = 86.4200
 
-# Create Base Folium Map
 m = folium.Map(
     location=[center_lat, center_lon],
     zoom_start=16,
     tiles="CartoDB positron",
     control_scale=True,
 )
-from folium.plugins import HeatMap
-HeatMap(heatmap_data).add_to(m)
 
-# Render map in Streamlit
-st_data = st_folium(m, width=1100, height=500)
-
-# Add Mine Panel Boundaries (Underground Coal Working Geometry)
 panel_polygon = [
     [23.7542, 86.4155],
     [23.7548, 86.4235],
@@ -393,7 +379,6 @@ folium.Polygon(
     popup="<b>Underground Longwall Panel 4-B</b><br>Target Coal Seam extraction block (Depth: 185m).",
 ).add_to(m)
 
-# Add Goaf Margin Area
 goaf_polygon = [
     [23.7530, 86.4175],
     [23.7520, 86.4215],
@@ -411,7 +396,6 @@ folium.Polygon(
     popup="<b>Active Goaf Caving Zone</b><br>Subsidence-prone decompressed roof strata.",
 ).add_to(m)
 
-# Add Long-Baseline Laser Reference Optical Ray
 laser_path = [
     [laser["tx_lat"], laser["tx_lon"]],
     [laser["rx_lat"], laser["rx_lon"]],
@@ -426,7 +410,6 @@ folium.PolyLine(
     popup=f"<b>Long-Baseline Laser Reference (980m)</b><br>Total Deviation: {laser['total_deviation_mm']:.2f} mm<br>Status: {laser['status']}",
 ).add_to(m)
 
-# Laser Stations
 folium.Marker(
     location=[laser["tx_lat"], laser["tx_lon"]],
     popup=f"<b>{laser['tx_name']}</b><br>Continuous collimated optical emitter.",
@@ -439,37 +422,28 @@ folium.Marker(
     icon=folium.Icon(color="purple", icon="crosshairs", prefix="fa"),
 ).add_to(m)
 
-# -----------------------------------------------------------------------------
-# GENERATE CONTINUOUS ANOMALY HEATMAP DATA
-# -----------------------------------------------------------------------------
-# We inject intermediate spatial sampling points around nodes to render a
-# smooth continuous subsidence risk gradient across the panel
 heat_points = []
 for node in nodes:
     lat, lon = node["lat"], node["lon"]
     score = node["anomaly_score"]
-    # Base node point
     heat_points.append([lat, lon, score])
 
-    # Interpolate neighboring micro-points for realistic continuous terrain gradient
     if score > 0.15:
         for offset_lat in [-0.0003, 0.0003]:
             for offset_lon in [-0.0003, 0.0003]:
                 heat_points.append([lat + offset_lat, lon + offset_lon, score * 0.75])
 
-# Add Laser reference contribution to heatmap if elevated
 if laser["total_deviation_mm"] > 1.0:
     mid_lat = (laser["tx_lat"] + laser["rx_lat"]) / 2
     mid_lon = (laser["tx_lon"] + laser["rx_lon"]) / 2
     heat_points.append([mid_lat, mid_lon, min(1.0, laser["total_deviation_mm"] / 5.0)])
 
-# Folium HeatMap Layer with color gradient
 gradient_config = {
-    0.1: "#10b981",  # Emerald Green (Safe)
-    0.3: "#06b6d4",  # Cyan (Watch)
-    0.5: "#f59e0b",  # Amber (Elevated)
-    0.75: "#f97316", # Orange (Warning)
-    1.0: "#ef4444",  # Crimson Red (Critical Subsidence)
+    0.1: "#10b981",
+    0.3: "#06b6d4",
+    0.5: "#f59e0b",
+    0.75: "#f97316",
+    1.0: "#ef4444",
 }
 
 HeatMap(
@@ -481,26 +455,18 @@ HeatMap(
     gradient=gradient_config,
 ).add_to(m)
 
-# -----------------------------------------------------------------------------
-# SENSOR NODE MARKERS & RICH POPUPS
-# -----------------------------------------------------------------------------
 for node in nodes:
     score = node["anomaly_score"]
     status = node["status"]
 
-    # Marker color mapping
     if status == "CRITICAL":
         color = "#ef4444"
-        icon_color = "red"
     elif status == "WARNING":
         color = "#f97316"
-        icon_color = "orange"
     elif status == "WATCH":
         color = "#0284c7"
-        icon_color = "blue"
     else:
         color = "#10b981"
-        icon_color = "green"
 
     popup_html = f"""
     <div style="font-family: Arial, sans-serif; min-width: 220px; font-size: 12px; line-height: 1.4;">
@@ -532,7 +498,6 @@ for node in nodes:
         popup=folium.Popup(popup_html, max_width=320),
     ).add_to(m)
 
-# Render Folium Map in Streamlit
 map_col, info_col = st.columns([3, 1])
 
 with map_col:
@@ -569,7 +534,6 @@ tab_trends, tab_spatial, tab_table, tab_logs = st.tabs([
     "🛡️ False Alarm & Alert Audit Log",
 ])
 
-# Build history DataFrame
 if history:
     df_hist = pd.DataFrame(history)
 else:
@@ -595,7 +559,6 @@ with tab_trends:
                 name="Mean Mine Score",
                 line=dict(color="#3b82f6", width=1.5, dash="dot"),
             ))
-            # Threshold lines
             fig_score.add_hline(y=0.70, line_dash="dash", line_color="#dc2626", annotation_text="Critical Threshold (0.70)")
             fig_score.add_hline(y=0.40, line_dash="dash", line_color="#d97706", annotation_text="Warning Threshold (0.40)")
             fig_score.update_layout(
@@ -634,7 +597,6 @@ with tab_trends:
             )
             st.plotly_chart(fig_disp, use_container_width=True)
 
-        # Second row of charts
         col_t3, col_t4 = st.columns(2)
         with col_t3:
             fig_tilt = px.line(
@@ -666,7 +628,6 @@ with tab_spatial:
     col_s1, col_s2 = st.columns([3, 2])
 
     with col_s1:
-        # Bar chart comparing all 8 nodes
         df_nodes = pd.DataFrame(nodes)
         fig_bar = px.bar(
             df_nodes,
@@ -689,7 +650,6 @@ with tab_spatial:
         st.plotly_chart(fig_bar, use_container_width=True)
 
     with col_s2:
-        # Multi-sensor radar comparison for most critical node
         crit_node = max(nodes, key=lambda n: n["anomaly_score"])
         categories = ["Displacement", "Tilt Angle", "Vibration RMS", "Load Delta", "Laser Shift"]
         norm_values = [
@@ -778,3 +738,5 @@ with tab_logs:
 if st.session_state.auto_refresh:
     time.sleep(2.0)
     st.rerun()
+
+```
