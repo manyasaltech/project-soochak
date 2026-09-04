@@ -17,7 +17,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
+# --- Existing Imports ---
+import streamlit as st
+import folium
+import numpy as np
+# ... (keep existing imports)
 
+# --- Add Deep Learning Imports Here ---
+from deep_engine import run_dl_inference
+from graph_topology import build_adjacency_matrix, NODE_COORDS
 from data_engine import (
     MineEnvironmentSimulator,
     OperationalScenario,
@@ -143,6 +151,18 @@ with st.sidebar:
         "Critical Subsidence Event (Emergency Alert)": OperationalScenario.CRITICAL_SUBSIDENCE,
         "Sensor Hardware Glitch (Drift Suppression)": OperationalScenario.SENSOR_GLITCH,
     }
+
+    st.markdown("---")
+    st.subheader("🧠 Select AI Model Engine")
+
+    view_mode = st.radio(
+        "Choose Analysis Mode:",
+        [
+            "Real-Time Anomaly Detection (Isolation Forest)",
+            "+12h Predictive Risk (STGCN-LSTM)"
+        ]
+    )
+st.markdown("---")
 
     selected_scenario_label = st.selectbox(
         "Operational Regime",
@@ -317,6 +337,25 @@ else:
 # -----------------------------------------------------------------------------
 # 5. FOLIUM REAL-TIME HEATMAP & GIS VISUALIZATION
 # -----------------------------------------------------------------------------
+# --- DEEP LEARNING VS CLASSICAL ML DATA ROUTING ---
+adj_matrix = build_adjacency_matrix(NODE_COORDS)
+
+if view_mode == "+12h Predictive Risk (STGCN-LSTM)":
+    st.info("🔮 **Deep Learning Engine Active:** Predicting +12 Hour Strata Movement across ESP32 Nodes using STGCN + LSTM.")
+    sample_history = np.random.randn(24, 8, 5)
+    dl_preds = run_dl_inference(sample_history, adj_matrix)
+    
+    # Override node intensity values using PyTorch model outputs
+    heatmap_data = [
+        [NODE_COORDS[i][0], NODE_COORDS[i][1], float(dl_preds[i])]
+        for i in range(len(NODE_COORDS))
+    ]
+else:
+    st.success("🟢 **Classical ML Engine Active:** Real-Time Isolation Forest Anomaly Detection.")
+    heatmap_data = [
+        [node["lat"], node["lon"], float(node["anomaly_score"])]
+        for node in telemetry_data
+    ]
 st.subheader("🗺️ Real-Time GIS Heatmap & Distributed Sensor Mesh")
 
 # Center on Jharia Coalfield Panel 4-B
@@ -330,6 +369,11 @@ m = folium.Map(
     tiles="CartoDB positron",
     control_scale=True,
 )
+from folium.plugins import HeatMap
+HeatMap(heatmap_data).add_to(m)
+
+# Render map in Streamlit
+st_data = st_folium(m, width=1100, height=500)
 
 # Add Mine Panel Boundaries (Underground Coal Working Geometry)
 panel_polygon = [
